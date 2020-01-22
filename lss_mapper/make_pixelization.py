@@ -15,8 +15,8 @@ class MakePixs(PipelineStage) :
     name = "MakePixs"
     inputs = [('raw_data', None)]
     outputs = [('clean_catalog',FitsFile), ('flatmap_info', FitsFile)]
-    config_options = {'res':0.0285, 'pad':0.1, 'band':'i',
-                    'flat_project':'CAR', 'mask_type':'sirius'}
+    config_options = {'res':0.0285, 'pad':0.1,
+                    'flat_project':'CAR'}
 
     def run(self) :
         """
