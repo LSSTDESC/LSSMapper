@@ -7,13 +7,16 @@ from .map_utils import createCountsMap, createMeanStdMaps, createMask, removeDis
 from .estDepth import get_depth
 from astropy.io import fits
 
-class MaxPixs(PipelineStage) :
-    name="MaxPixs"
-    inputs=[('raw_data', None)]
-    outputs=[('flatmap_info', FitsFile)]
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class MakePixs(PipelineStage) :
+    name = "MakePixs"
+    inputs = [('raw_data', None)]
+    outputs = [('clean_catalog',FitsFile), ('flatmap_info', FitsFile)]
     config_options = {'res':0.0285, 'pad':0.1, 'band':'i',
                     'flat_project':'CAR', 'mask_type':'sirius'}
-    bands=['g','r','i','z','y']
 
     def run(self) :
         """
@@ -22,7 +25,6 @@ class MaxPixs(PipelineStage) :
         - Reduces the raw catalog by imposing quality cuts, a cut on i-band magnitude and a star-galaxy separation cat.
         - Produces mask maps, dust maps, depth maps and star density maps.
         """
-        band=self.config['band']
 
         #Read list of files
         f=open(self.get_input('raw_data'))
@@ -36,13 +38,10 @@ class MaxPixs(PipelineStage) :
                 c=Table.read(fname)
                 cat=vstack([cat,c],join_type='exact')
 
-        if band not in self.bands :
-            raise ValueError("Band "+band+" not available")
-
-        print('Initial catalog size: %d'%(len(cat)))
+        logger.info('Initial catalog size: %d'%(len(cat)))
             
         # Clean nulls and nans
-        print("Basic cleanup")
+        logger.info("Applying basic quality cuts.")
         sel=np.ones(len(cat),dtype=bool)
         names=[n for n in cat.keys()]
         isnull_names=[]
@@ -53,7 +52,7 @@ class MaxPixs(PipelineStage) :
             else:
                 if not key.startswith("pz_") : #Keep photo-z's even if they're NaNs
                     sel[np.isnan(cat[key])]=0
-        print("Will drop %d rows"%(len(sel)-np.sum(sel)))
+                logger.info("Will drop %d rows"%(len(sel)-np.sum(sel)))
         cat.remove_columns(isnull_names)
         cat.remove_rows(~sel)
 
@@ -65,6 +64,19 @@ class MaxPixs(PipelineStage) :
         # Generate flatmap info
         flatmap_info_descr = 'FlatmapInfo'
         fsk.write_flat_map(self.get_output('flatmap_info'), np.ones(fsk.npix), descript=flatmap_info_descr)
+
+        ####
+        # Write final catalog
+        # 1- header
+        logger.info("Writing cleaned catalog.")
+        hdr=fits.Header()
+        prm_hdu=fits.PrimaryHDU(header=hdr)
+        # 2- Catalog
+        cat_hdu=fits.table_to_hdu(cat)
+        # 3- Actual writing
+        hdul=fits.HDUList([prm_hdu,cat_hdu])
+        hdul.writeto(self.get_output('clean_catalog'), overwrite=True)
+        ####
 
 if __name__ == '__main__':
     cls = PipelineStage.main()
