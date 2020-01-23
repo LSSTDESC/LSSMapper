@@ -362,7 +362,8 @@ class FlatMapInfo(object) :
         return fm_dg,mp_dg
 
     @classmethod
-    def from_coords(FlatMapInfo,ra_arr,dec_arr,reso,pad=None,projection='TAN') :
+    def from_coords(FlatMapInfo,ra_arr,dec_arr,reso,pad=None,projection='TAN',
+                    move_equator=False) :
         """
         Generates a FlatMapInfo object that can encompass all points with coordinates
         given by ra_arr (R.A.) and dec_arr (dec.) with pixel resolution reso.
@@ -370,6 +371,9 @@ class FlatMapInfo(object) :
         to leave as padding around the edges of the map. If None, it will default to 20.
         The flat-sky maps will use a spherical projection given by the corresponding
         parameter. Tested values are 'TAN' (gnomonic) and 'CAR' (Plate carree).
+
+        If `move_equator` is True, the map coordinates will be centered around the mean
+        declination of the sample.
         """
 
         if len(ra_arr.flatten())!=len(dec_arr.flatten()) :
@@ -388,7 +392,10 @@ class FlatMapInfo(object) :
         w=WCS(naxis=2)
         w.wcs.crpix=[0,0]
         w.wcs.cdelt=[-reso,reso]
-        w.wcs.crval=[ramean,decmean]
+        if move_equator:
+            w.wcs.crval=[ramean,decmean]
+        else:
+            w.wcs.crval=[ramean,0]
         w.wcs.ctype=['RA---'+projection,'DEC--'+projection]
         ix,iy=np.transpose(w.wcs_world2pix(np.transpose(np.array([ra_arr,dec_arr])),0))
         #Estimate map size
