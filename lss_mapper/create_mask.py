@@ -14,7 +14,7 @@ class MaskMapper(PipelineStage) :
     name="MaskMapper"
     inputs=[('clean_catalog', FitsFile), ('flatmap_info', FitsFile)]
     outputs=[('dust_map',FitsFile),('star_map',FitsFile),
-             ('bo_mask',FitsFile),('masked_fraction',FitsFile),('depth_map',FitsFile)]
+             ('bo_mask',FitsFile),('masked_fraction',FitsFile),('depth_map',FitsFile),('cut_catalog',FitsFile)]
     config_options={'min_snr':10.,'depth_cut':24.5,'res':0.0285,
                     'res_bo':0.003,'pad':0.1,'band':'i','depth_method':'fluxerr',
                     'flat_project':'CAR','mask_type':'sirius'}
