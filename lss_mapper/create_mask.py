@@ -4,6 +4,7 @@ import numpy as np
 from .map_utils import createCountsMap, createMeanStdMaps, createMask, removeDisconnected
 from .estDepth import get_depth
 from astropy.io import fits
+from astropy.table import Table
 from .flatmaps import read_flat_map
 
 import logging
@@ -42,7 +43,7 @@ class MaskMapper(PipelineStage) :
         :param fsk: FlatMapInfo object describing the geometry of the output map
         :param sel: mask used to select the stars to be used.
         """
-        print("Creating star map")
+        logger.info("Creating star map")
         mstar=createCountsMap(cat['ra'][sel],cat['dec'][sel],fsk)+0.
         descstar='Stars, '+self.config['band']+'<%.2lf'%(self.config['depth_cut'])
         return mstar,descstar
@@ -116,7 +117,7 @@ class MaskMapper(PipelineStage) :
         band = self.config['band']
 
         logger.info("Reading clean catalog.")
-        cat = fits.open(self.get_input('clean_catalog'))[1].data
+        cat = Table(fits.open(self.get_input('clean_catalog'))[1].data)
 
         logger.info("Reading pixelization.")
         fsk, _ = read_flat_map(self.get_input("flatmap_info"))
