@@ -16,7 +16,8 @@ class MakePixs(PipelineStage) :
     inputs = [('raw_data', None)]
     outputs = [('clean_catalog',FitsFile), ('flatmap_info', FitsFile)]
     config_options = {'res':0.0285, 'pad':0.1,
-                    'flat_project':'CAR'}
+                      'flat_project':'CAR',
+                      'shift_to_equator':False}
 
     def run(self) :
         """
@@ -58,12 +59,14 @@ class MakePixs(PipelineStage) :
 
         fsk=FlatMapInfo.from_coords(cat['ra'],cat['dec'],self.config['res'],
                                     pad=self.config['pad']/self.config['res'],
-                                    projection=self.config['flat_project'])
+                                    projection=self.config['flat_project'],
+                                    move_equator=self.config['shift_to_equator'])
 
         ####
         # Generate flatmap info
         flatmap_info_descr = 'FlatmapInfo'
-        fsk.write_flat_map(self.get_output('flatmap_info'), np.ones(fsk.npix), descript=flatmap_info_descr)
+        fsk.write_flat_map(self.get_output('flatmap_info'), np.ones(fsk.npix),
+                           descript=flatmap_info_descr)
 
         ####
         # Write final catalog
